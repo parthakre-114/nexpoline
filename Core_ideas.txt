@@ -1,0 +1,25 @@
+The paper "Making System Call a Privilege, Not a Right" presents a novel approach to improve operating system security by limiting access to system calls. Traditionally, applications and processes have unrestricted access to system calls, which interface directly with the operating system kernel. This is a potential security risk, as malicious software can abuse these system calls to escalate privileges, execute arbitrary code, or exploit vulnerabilities.
+
+### Core Ideas of the Paper
+
+1. **System Call Privileges**:
+   The paper suggests that system calls should not be universally available to every process by default. Instead, processes should be granted access to specific system calls based on necessity. This aligns with the principle of least privilege, meaning applications only receive access to the system calls required to perform their legitimate tasks.
+
+2. **Sandboxing Approach**:
+   To enforce this concept, the paper discusses sandboxing mechanisms where a process is confined to a controlled environment with strictly limited system call permissions. The sandbox specifies which system calls the process can invoke, preventing unauthorized or malicious use of other system calls.
+
+3. **Privilege Separation**:
+   The research proposes separating system call privileges based on functionality and security needs. For instance, a text editor does not need access to network-related system calls. Privileges can be dynamically assigned depending on the stage or execution flow of an application.
+
+4. **Security Implications**:
+   By making system call access a privilege rather than a right, the attack surface of the kernel is reduced. Malware and exploits would find it much harder to misuse system calls if access is controlled or prevented entirely for certain processes.
+
+5. **Implementation Considerations**:
+   The paper also discusses the practical implementation of this concept in modern operating systems. It might require modifications to existing kernel mechanisms, changes to process management, and possibly new APIs or security frameworks.
+
+6. **Use Case Examples**:
+   The authors provide use cases, demonstrating how restricting system calls can prevent common attacks such as privilege escalation, code injection, and denial of service. They also show how performance can be optimized while maintaining robust security controls.
+
+### Conclusion
+
+The main goal of the paper is to improve security by fundamentally changing how system calls are managed in the operating system. By making system calls a privilege (granted conditionally), rather than a right (available to all), the paper seeks to limit potential attack vectors while preserving the functionality and flexibility of the OS.
