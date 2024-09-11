@@ -23,3 +23,79 @@ The paper "Making System Call a Privilege, Not a Right" presents a novel approac
 ### Conclusion
 
 The main goal of the paper is to improve security by fundamentally changing how system calls are managed in the operating system. By making system calls a privilege (granted conditionally), rather than a right (available to all), the paper seeks to limit potential attack vectors while preserving the functionality and flexibility of the OS.
+
+
+
+
+
+To clarify how **NexPro** determines whether a syscall is legitimate, let's break it down more explicitly:
+
+### Key Concept: **Legitimate Syscall = Syscall from Trusted Memory Region**
+
+NexPro's primary goal is to ensure that only syscalls originating from **trusted** memory regions are executed. Here's how it determines legitimacy:
+
+---
+
+### 1. **Memory Protection Keys (MPK) Mechanism**
+   - **Trusted Code**: Only the memory marked as **trusted** (using MPK) is allowed to perform syscalls.
+   - **Untrusted Code**: Any memory region not marked as trusted is treated as **untrusted** and cannot perform syscalls.
+   
+   **How NexPro Decides**:
+   - When a syscall is made, NexPro checks the current **Memory Protection Key (MPK)** status.
+   - If the syscall comes from a memory region with the **trusted protection key**, it is considered **legitimate**.
+   - If it comes from an **untrusted memory region**, the syscall is **blocked**.
+
+---
+
+### 2. **Syscall User Dispatch (SUD) Mechanism**
+   - **What It Does**: NexPro sets up **Syscall User Dispatch (SUD)** to monitor where syscalls are made from.
+   - **How NexPro Decides**:
+     - If the syscall is attempted from **untrusted code** (not marked as trusted), SUD blocks the syscall.
+     - This check happens by analyzing the memory region from which the syscall is initiated.
+     - Only syscalls made from trusted code regions are allowed to proceed.
+
+---
+
+### 3. **Seccomp-BPF Filters** (Optional Layer)
+   - **What It Does**: NexPro can add another layer of security using **seccomp-bpf**.
+   - **How NexPro Decides**:
+     - Seccomp sets up a filter to allow or block syscalls based on predefined rules (e.g., which syscalls are allowed for a trusted application).
+     - If a syscall doesn't meet the legitimate conditions (like originating from trusted memory or the right process), it gets blocked.
+
+---
+
+### 4. **Trampoline Mechanism (Switching Memory Permissions)**
+   - **What It Does**: The **trampoline** ensures that before a syscall is made, the memory permission switches from **untrusted** to **trusted**.
+   - **How NexPro Decides**:
+     - If the permission is successfully switched to trusted using the `WRPKRU` instruction, the syscall proceeds as legitimate.
+     - If the switch doesn’t happen or fails, the syscall is blocked as it would be considered illegitimate.
+
+---
+
+### 5. **Process Lineage Verification (Additional Security Check)**
+   - **What It Does**: If NexPro implements process lineage verification, it checks the origin of the process making the syscall.
+   - **How NexPro Decides**:
+     - If the process has a verified and authorized lineage (i.e., it is a trusted process), the syscall is legitimate.
+     - If the process lineage does not match the trusted criteria, the syscall is blocked.
+
+---
+
+### 6. **Behavioral Learning and Fine-Grained Policies (Future Improvements)**
+   - **What It Does**: Over time, NexPro can learn the normal behavior of trusted applications.
+   - **How NexPro Decides**:
+     - Based on this learned behavior, NexPro can enforce fine-grained policies, allowing only syscalls that fit the expected profile of trusted applications.
+     - Any deviation from this learned pattern can mark a syscall as **illegitimate**.
+
+---
+
+### **In Summary**:
+1. **MPK** and **SUD** determine if the syscall comes from a **trusted** memory region.
+2. **Seccomp-bpf** can add additional filtering based on syscall rules.
+3. The **trampoline** ensures only trusted memory can make syscalls.
+4. Future improvements (like behavioral learning) can refine this process further.
+
+A syscall is **legitimate** if it:
+- Originates from a **trusted memory region**.
+- Passes additional filters, if implemented (like **seccomp** or process lineage checks).
+
+Any syscall that fails these checks is considered **illegitimate** and is blocked.
